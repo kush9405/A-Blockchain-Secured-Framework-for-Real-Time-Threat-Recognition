@@ -159,13 +159,6 @@ pyee==13.0.0
 Pygments==2.19.2
 PyJWT==2.10.1
 pymultihash==0.8.2
-pynput==1.8.1
-pynput-robocorp-fork==5.0.0
-pyobjc-core==9.2
-pyobjc-framework-ApplicationServices==9.2
-pyobjc-framework-Cocoa==9.2
-pyobjc-framework-CoreText==11.1
-pyobjc-framework-Quartz==9.2
 pyotp==2.9.0
 pypdf==6.0.0
 pyperclip==1.9.0
