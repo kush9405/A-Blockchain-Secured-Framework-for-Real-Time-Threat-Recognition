@@ -1,1 +1,9 @@
 .env
+VideoStorageABI.json
+backend/uploads/
+.DS_Store
+.vscode/
+node_modules/
+build/
+dist/
+.env.local
