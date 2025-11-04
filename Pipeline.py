@@ -32,11 +32,6 @@ import json
 import time
 from web3 import Web3
 
-
-# Default configuration used by FastAPI app
-LABEL_NAMES = ['Fighting', 'Shooting', 'Riot', 'Abuse', 'Car Accident', 'Explosion']
-CONFIDENCE_THRESHOLD = 0.50
-
 # Suppress warnings
 warnings.filterwarnings('ignore')
 
@@ -239,80 +234,80 @@ def run_inference_pipeline(video_path, model_path):
     except Exception as e:
         print(f"❌ Error during model inference: {e}"); return None
 
-# if __name__ == '__main__':
-#     # --- Configuration ---
-#     # video_input_path = "/Users/kushagraagarwal/Downloads/riot1.mp4"
-#     video_input_path = "/Users/kushagraagarwal/Downloads/riot2.mp4"
-#     model_checkpoint_path = "checkpoint_epoch_49.pth"
-#     LABEL_NAMES = ['Fighting', 'Shooting', 'Riot', 'Abuse', 'Car Accident', 'Explosion']
-#     CONFIDENCE_THRESHOLD = 0.50
-#     LOCAL_LOG_FILE = "event_log.jsonl"
+if __name__ == '__main__':
+    # --- Configuration ---
+    # video_input_path = "/Users/kushagraagarwal/Downloads/riot1.mp4"
+    video_input_path = "/Users/kushagraagarwal/Downloads/riot2.mp4"
+    model_checkpoint_path = "checkpoint_epoch_49.pth"
+    LABEL_NAMES = ['Fighting', 'Shooting', 'Riot', 'Abuse', 'Car Accident', 'Explosion']
+    CONFIDENCE_THRESHOLD = 0.50
+    LOCAL_LOG_FILE = "event_log.jsonl"
     
-#     # --- !! IMPORTANT !! PASTE YOUR DEPLOYED CONTRACT ADDRESS HERE ---
-#     CONTRACT_ADDRESS = Web3.to_checksum_address("0x3cc6c2523724a322795b59625ea3715a960c7a3c") 
+    # --- !! IMPORTANT !! PASTE YOUR DEPLOYED CONTRACT ADDRESS HERE ---
+    CONTRACT_ADDRESS = Web3.to_checksum_address("0x3cc6c2523724a322795b59625ea3715a960c7a3c") 
     
-#     os.environ[ "ETHEREUM_NODE_URL"]="https://sepolia.infura.io/v3/76faca2e845c4fcfa3d3ef5a5a1a6b06"
-#     os.environ["PINATA_JWT"]="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI3ODczNDU5Mi1kMmQ5LTQ5Y2ItYmRhYi02NWRmZjJiNGE4NDciLCJlbWFpbCI6Imt1c2hhZ3JhYWdhcndhbDIwMDNAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImJmYzM1MzM5NTIyYzY0ZjRmNzMyIiwic2NvcGVkS2V5U2VjcmV0IjoiYTY5NTNmYjQwNWJiMTBhYWIzYjM3NzhjODJhMjBhOGUzZWIzNTg1Y2UyNTIzZWJjNWFmYzg1Njg1N2E0MThkMSIsImV4cCI6MTc5MzcyODcyNX0.qvjEkTy1nUXBRZZ4W2FvgykYSUtzXD4aIlgPhKMN9tM"
-#     os.environ["SIGNER_PRIVATE_KEY"]="9a03bd45d05f5d8d9b3cfe46a84f12f624a6d0caf4ca1c6a3412ab2087d488f9"
-#     # --- Load Environment Variables ---
-#     PINATA_JWT = os.getenv('PINATA_JWT')
-#     ETHEREUM_NODE_URL = os.getenv('ETHEREUM_NODE_URL')
-#     SIGNER_PRIVATE_KEY = os.getenv('SIGNER_PRIVATE_KEY')
+    os.environ[ "ETHEREUM_NODE_URL"]="https://sepolia.infura.io/v3/76faca2e845c4fcfa3d3ef5a5a1a6b06"
+    os.environ["PINATA_JWT"]="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI3ODczNDU5Mi1kMmQ5LTQ5Y2ItYmRhYi02NWRmZjJiNGE4NDciLCJlbWFpbCI6Imt1c2hhZ3JhYWdhcndhbDIwMDNAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImJmYzM1MzM5NTIyYzY0ZjRmNzMyIiwic2NvcGVkS2V5U2VjcmV0IjoiYTY5NTNmYjQwNWJiMTBhYWIzYjM3NzhjODJhMjBhOGUzZWIzNTg1Y2UyNTIzZWJjNWFmYzg1Njg1N2E0MThkMSIsImV4cCI6MTc5MzcyODcyNX0.qvjEkTy1nUXBRZZ4W2FvgykYSUtzXD4aIlgPhKMN9tM"
+    os.environ["SIGNER_PRIVATE_KEY"]="9a03bd45d05f5d8d9b3cfe46a84f12f624a6d0caf4ca1c6a3412ab2087d488f9"
+    # --- Load Environment Variables ---
+    PINATA_JWT = os.getenv('PINATA_JWT')
+    ETHEREUM_NODE_URL = os.getenv('ETHEREUM_NODE_URL')
+    SIGNER_PRIVATE_KEY = os.getenv('SIGNER_PRIVATE_KEY')
     
-#     try:
-#         with open('VideoStorageABI.json', 'r') as f: CONTRACT_ABI = json.load(f)
-#     except FileNotFoundError:
-#         print("❌ CRITICAL: 'VideoStorageABI.json' not found."); CONTRACT_ABI = None
+    try:
+        with open('VideoStorageABI.json', 'r') as f: CONTRACT_ABI = json.load(f)
+    except FileNotFoundError:
+        print("❌ CRITICAL: 'VideoStorageABI.json' not found."); CONTRACT_ABI = None
 
-#     # --- Run Pipeline ---
-#     probabilities = run_inference_pipeline(video_input_path, model_checkpoint_path)
+    # --- Run Pipeline ---
+    probabilities = run_inference_pipeline(video_input_path, model_checkpoint_path)
 
-#     # --- Process Output & Trigger Next Steps ---
-#     if probabilities is not None:
-#         print("\n" + "="*35 + "\n      MODEL OUTPUT ANALYSIS\n" + "="*35)
-#         probs_np = probabilities.squeeze().cpu().numpy()
-#         detected_labels = []
-#         for i, name in enumerate(LABEL_NAMES):
-#             prob = probs_np[i]
-#             print(f"Probability of '{name}': {prob:.4f}")
-#             if prob >= CONFIDENCE_THRESHOLD:
-#                 detected_labels.append({"label": name, "confidence": float(prob)})
+    # --- Process Output & Trigger Next Steps ---
+    if probabilities is not None:
+        print("\n" + "="*35 + "\n      MODEL OUTPUT ANALYSIS\n" + "="*35)
+        probs_np = probabilities.squeeze().cpu().numpy()
+        detected_labels = []
+        for i, name in enumerate(LABEL_NAMES):
+            prob = probs_np[i]
+            print(f"Probability of '{name}': {prob:.4f}")
+            if prob >= CONFIDENCE_THRESHOLD:
+                detected_labels.append({"label": name, "confidence": float(prob)})
         
-#         if detected_labels:
-#             print(f"\n🔥 Threat Detected! Triggering IPFS & Blockchain Pipeline...")
+        if detected_labels:
+            print(f"\n🔥 Threat Detected! Triggering IPFS & Blockchain Pipeline...")
             
-#             # 1. Upload to IPFS
-#             ipfs_hash = upload_to_pinata(video_input_path, PINATA_JWT)
+            # 1. Upload to IPFS
+            ipfs_hash = upload_to_pinata(video_input_path, PINATA_JWT)
             
-#             # 2. Store on Blockchain
-#             tx_hash = None
-#             if ipfs_hash and CONTRACT_ABI and ETHEREUM_NODE_URL and SIGNER_PRIVATE_KEY and CONTRACT_ADDRESS :
-#                 w3 = Web3(Web3.HTTPProvider(ETHEREUM_NODE_URL))
-#                 if w3.is_connected():
-#                     signer = w3.eth.account.from_key(SIGNER_PRIVATE_KEY)
-#                     contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
-#                     title = f"Threat Event: {', '.join([d['label'] for d in detected_labels])}"
-#                     tx_hash = store_on_blockchain(contract, w3, signer, ipfs_hash, title)
-#                 else: print("❌ Could not connect to Ethereum node.")
-#             else: print("\nSkipping blockchain transaction due to missing configuration.")
+            # 2. Store on Blockchain
+            tx_hash = None
+            if ipfs_hash and CONTRACT_ABI and ETHEREUM_NODE_URL and SIGNER_PRIVATE_KEY and CONTRACT_ADDRESS :
+                w3 = Web3(Web3.HTTPProvider(ETHEREUM_NODE_URL))
+                if w3.is_connected():
+                    signer = w3.eth.account.from_key(SIGNER_PRIVATE_KEY)
+                    contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
+                    title = f"Threat Event: {', '.join([d['label'] for d in detected_labels])}"
+                    tx_hash = store_on_blockchain(contract, w3, signer, ipfs_hash, title)
+                else: print("❌ Could not connect to Ethereum node.")
+            else: print("\nSkipping blockchain transaction due to missing configuration.")
 
-#             # 3. Log event locally (Hybrid Approach)
-#             event_data = {
-#                 "timestamp_utc": time.time(),
-#                 "video_file": os.path.basename(video_input_path),
-#                 "detections": detected_labels,
-#                 "ipfs_hash": ipfs_hash,
-#                 "transaction_hash": tx_hash,
-#                 "ipfs_link": f"https://gateway.pinata.cloud/ipfs/{ipfs_hash}" if ipfs_hash else None
-#             }
-#             log_event_locally(LOCAL_LOG_FILE, event_data)
+            # 3. Log event locally (Hybrid Approach)
+            event_data = {
+                "timestamp_utc": time.time(),
+                "video_file": os.path.basename(video_input_path),
+                "detections": detected_labels,
+                "ipfs_hash": ipfs_hash,
+                "transaction_hash": tx_hash,
+                "ipfs_link": f"https://gateway.pinata.cloud/ipfs/{ipfs_hash}" if ipfs_hash else None
+            }
+            log_event_locally(LOCAL_LOG_FILE, event_data)
 
-#             print("\n--- ✅ Permanent Evidence Record ---")
-#             print(f"IPFS Link: {event_data['ipfs_link']}")
-#             print(f"Proof of Record (Transaction Hash): {tx_hash}")
-#             print(f"Ethereum Explorer Link: https://sepolia.etherscan.io/tx/0x{tx_hash}" if tx_hash else "N/A")
+            print("\n--- ✅ Permanent Evidence Record ---")
+            print(f"IPFS Link: {event_data['ipfs_link']}")
+            print(f"Proof of Record (Transaction Hash): {tx_hash}")
+            print(f"Ethereum Explorer Link: https://sepolia.etherscan.io/tx/0x{tx_hash}" if tx_hash else "N/A")
 
-#         else: print("\n✅ No threats detected above the confidence threshold.")
-#         print("\nPipeline finished successfully!")
-#     else:
-#         print("\n❌ Pipeline failed to produce an output.")
+        else: print("\n✅ No threats detected above the confidence threshold.")
+        print("\nPipeline finished successfully!")
+    else:
+        print("\n❌ Pipeline failed to produce an output.")
