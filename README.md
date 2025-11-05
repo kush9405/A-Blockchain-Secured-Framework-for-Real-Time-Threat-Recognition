@@ -126,6 +126,7 @@ You can test the core pipeline directly on a local video file.
 │   ├── app.py                # API endpoints and logic
 │   ├── Pipeline.py           # Symlink/copy of the core pipeline
 │   └── requirements.txt      # Backend dependencies
+|   └── VideoStorageABI.json      # ABI of the Ethereum smart contract
 ├── frontend/                 # Web interface files
 │   ├── index.html            # Main HTML page for the UI
 │   ├── style.css             # Styles for the UI
