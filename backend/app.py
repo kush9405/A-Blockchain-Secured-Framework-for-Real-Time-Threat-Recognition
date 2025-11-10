@@ -14,7 +14,7 @@ from typing import Dict, Any
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import Pipeline as pipeline  # project Pipeline.py
+import backend.Pipeline as pipeline  # project Pipeline.py
 
 # --- NEW: Load environment variables at the top ---
 from dotenv import load_dotenv

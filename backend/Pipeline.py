@@ -35,15 +35,22 @@ from web3 import Web3
 # Suppress warnings
 warnings.filterwarnings('ignore')
 
-# --- 1. Feature Extractors & Model Architecture (Unchanged) ---
+# --- Constants (can be used by the backend) ---
+LABEL_NAMES = ['Fighting', 'Shooting', 'Riot', 'Abuse', 'Car Accident', 'Explosion']
+CONFIDENCE_THRESHOLD = 0.50
+
+# --- 1. Feature Extractors & Model Architecture ---
 
 # Global variables to hold the large feature extraction models
 yamnet_model = None
 x3d_model = None
 feature_extractor_device = None
 
-# In Pipeline.py
-
+# ==============================================================================
+# --- MODIFIED FUNCTION ---
+# This function is updated to load models from the local cache created
+# by the download_models.py script during the build step on Render.
+# ==============================================================================
 def _load_feature_extractors():
     """
     Loads the YAMNet and X3D models from a local cache created during the build step.
@@ -55,10 +62,12 @@ def _load_feature_extractors():
 
     print("--- Loading models from local build cache ---")
     
-    # Define the SAME local cache path used in download_models.py
+    # Define the local cache path. Since this script is inside the 'backend' directory
+    # on Render, os.getcwd() will be the 'backend' folder.
     CACHE_DIR = os.path.join(os.getcwd(), 'model_cache')
-    
-    # Set environment variables BEFORE importing the hub libraries
+    print(f"Looking for cache in: {CACHE_DIR}")
+
+    # Set environment variables BEFORE importing the hub libraries so they know where to look.
     os.environ['TFHUB_CACHE_DIR'] = os.path.join(CACHE_DIR, 'tf_hub')
     torch.hub.set_dir(os.path.join(CACHE_DIR, 'torch_hub'))
     
@@ -77,7 +86,7 @@ def _load_feature_extractors():
     x3d_model = x3d_s(pretrained=True).eval().to(feature_extractor_device)
     
     print("--- ✅ Models loaded successfully from cache ---")
-    
+
 def extract_audio_features(audio_path):
     """Extracts audio features using the YAMNet model."""
     try:
@@ -174,21 +183,15 @@ def store_on_blockchain(contract, w3, signer_account, ipfs_hash, title):
         })
         signed_tx = w3.eth.account.sign_transaction(tx, private_key=signer_account.key)
         
-        # --- DEBUGGING LINES ---
-        # These lines will tell us the exact structure of the object.
-        # print("\n--- DEBUGGING SIGNED TRANSACTION OBJECT ---")
-        # print(f"Type of signed_tx: {type(signed_tx)}")
-        # print(f"Attributes of signed_tx: {dir(signed_tx)}")
-        # print("--- END DEBUGGING ---")
-
-        # Robust version check
+        # --- ROBUST VERSION CHECK (Typo Corrected) ---
+        # This code now correctly checks for 'rawTransaction' (older web3.py)
+        # or 'raw' (newer web3.py) to prevent version conflicts.
         raw_tx_bytes = None
-        if hasattr(signed_tx, 'raw_transaction'):
-            raw_tx_bytes = signed_tx.raw_transaction
+        if hasattr(signed_tx, 'rawTransaction'):
+            raw_tx_bytes = signed_tx.rawTransaction
         elif hasattr(signed_tx, 'raw'):
             raw_tx_bytes = signed_tx.raw
         else:
-            # This is the error you are getting. The printouts above will tell us why.
             raise AttributeError("Signed transaction object has neither 'rawTransaction' nor 'raw' attribute.")
 
         print("Sending transaction to the blockchain...")
@@ -212,123 +215,21 @@ def log_event_locally(log_file, event_data):
     except Exception as e:
         print(f"❌ Failed to write to local log: {e}")
 
-# --- 3. The Main Inference Pipeline ---
+# This function is now used by backend/app.py and should not be run directly.
+def _detect_labels_from_probs(probs, label_names, threshold):
+    out = []
+    for i, name in enumerate(label_names):
+        try:
+            val = float(probs[i])
+        except Exception:
+            val = 0.0
+        if val >= threshold:
+            out.append({"label": name, "confidence": val})
+    return out
 
-def run_inference_pipeline(video_path, model_path):
-    _load_feature_extractors()
-    if not os.path.exists(video_path):
-        print(f"Error: Video file not found at '{video_path}'")
-        return None
-    audio_path = "temp_audio.wav"
-    audio_extracted = False
-    print("\nStep 1: Separating audio...")
-    try:
-        with VideoFileClip(video_path) as clip:
-            if clip.audio:
-                clip.audio.write_audiofile(audio_path, logger=None)
-                audio_extracted = True
-    except Exception: print("Warning: Could not extract audio.")
-    print("Step 2: Extracting video features...")
-    video_features = extract_video_features(video_path)
-    print("Step 3: Extracting audio features...")
-    audio_features = extract_audio_features(audio_path) if audio_extracted else np.zeros(1024, dtype=np.float32)
-    if os.path.exists(audio_path): os.remove(audio_path)
-    print("Step 4: Loading the trained fusion model...")
-    try:
-        model = AttentionFusionClassifier()
-        checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        model.eval()
-        print("✅ Fusion model loaded.")
-    except Exception as e:
-        print(f"❌ Error loading fusion model: {e}"); return None
-    print("Step 5: Running inference...")
-    try:
-        video_tensor = torch.from_numpy(video_features).unsqueeze(0)
-        audio_tensor = torch.from_numpy(audio_features).unsqueeze(0)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-        video_tensor, audio_tensor = video_tensor.to(device), audio_tensor.to(device)
-        print(f"Running inference on device: {device}")
-        with torch.no_grad():
-            return model(audio_tensor, video_tensor)
-    except Exception as e:
-        print(f"❌ Error during model inference: {e}"); return None
-
-if __name__ == '__main__':
-    # --- Configuration ---
-    # video_input_path = "/Users/kushagraagarwal/Downloads/riot1.mp4"
-    video_input_path = "/Users/kushagraagarwal/Downloads/riot2.mp4"
-    model_checkpoint_path = "checkpoint_epoch_49.pth"
-    LABEL_NAMES = ['Fighting', 'Shooting', 'Riot', 'Abuse', 'Car Accident', 'Explosion']
-    CONFIDENCE_THRESHOLD = 0.50
-    LOCAL_LOG_FILE = "event_log.jsonl"
-    
-    # --- !! IMPORTANT !! PASTE YOUR DEPLOYED CONTRACT ADDRESS HERE ---
-    CONTRACT_ADDRESS = Web3.to_checksum_address("0x3cc6c2523724a322795b59625ea3715a960c7a3c") 
-    
-    os.environ[ "ETHEREUM_NODE_URL"]="https://sepolia.infura.io/v3/76faca2e845c4fcfa3d3ef5a5a1a6b06"
-    os.environ["PINATA_JWT"]="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI3ODczNDU5Mi1kMmQ5LTQ5Y2ItYmRhYi02NWRmZjJiNGE4NDciLCJlbWFpbCI6Imt1c2hhZ3JhYWdhcndhbDIwMDNAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImJmYzM1MzM5NTIyYzY0ZjRmNzMyIiwic2NvcGVkS2V5U2VjcmV0IjoiYTY5NTNmYjQwNWJiMTBhYWIzYjM3NzhjODJhMjBhOGUzZWIzNTg1Y2UyNTIzZWJjNWFmYzg1Njg1N2E0MThkMSIsImV4cCI6MTc5MzcyODcyNX0.qvjEkTy1nUXBRZZ4W2FvgykYSUtzXD4aIlgPhKMN9tM"
-    os.environ["SIGNER_PRIVATE_KEY"]="9a03bd45d05f5d8d9b3cfe46a84f12f624a6d0caf4ca1c6a3412ab2087d488f9"
-    # --- Load Environment Variables ---
-    PINATA_JWT = os.getenv('PINATA_JWT')
-    ETHEREUM_NODE_URL = os.getenv('ETHEREUM_NODE_URL')
-    SIGNER_PRIVATE_KEY = os.getenv('SIGNER_PRIVATE_KEY')
-    
-    try:
-        with open('VideoStorageABI.json', 'r') as f: CONTRACT_ABI = json.load(f)
-    except FileNotFoundError:
-        print("❌ CRITICAL: 'VideoStorageABI.json' not found."); CONTRACT_ABI = None
-
-    # --- Run Pipeline ---
-    probabilities = run_inference_pipeline(video_input_path, model_checkpoint_path)
-
-    # --- Process Output & Trigger Next Steps ---
-    if probabilities is not None:
-        print("\n" + "="*35 + "\n      MODEL OUTPUT ANALYSIS\n" + "="*35)
-        probs_np = probabilities.squeeze().cpu().numpy()
-        detected_labels = []
-        for i, name in enumerate(LABEL_NAMES):
-            prob = probs_np[i]
-            print(f"Probability of '{name}': {prob:.4f}")
-            if prob >= CONFIDENCE_THRESHOLD:
-                detected_labels.append({"label": name, "confidence": float(prob)})
-        
-        if detected_labels:
-            print(f"\n🔥 Threat Detected! Triggering IPFS & Blockchain Pipeline...")
-            
-            # 1. Upload to IPFS
-            ipfs_hash = upload_to_pinata(video_input_path, PINATA_JWT)
-            
-            # 2. Store on Blockchain
-            tx_hash = None
-            if ipfs_hash and CONTRACT_ABI and ETHEREUM_NODE_URL and SIGNER_PRIVATE_KEY and CONTRACT_ADDRESS :
-                w3 = Web3(Web3.HTTPProvider(ETHEREUM_NODE_URL))
-                if w3.is_connected():
-                    signer = w3.eth.account.from_key(SIGNER_PRIVATE_KEY)
-                    contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
-                    title = f"Threat Event: {', '.join([d['label'] for d in detected_labels])}"
-                    tx_hash = store_on_blockchain(contract, w3, signer, ipfs_hash, title)
-                else: print("❌ Could not connect to Ethereum node.")
-            else: print("\nSkipping blockchain transaction due to missing configuration.")
-
-            # 3. Log event locally (Hybrid Approach)
-            event_data = {
-                "timestamp_utc": time.time(),
-                "video_file": os.path.basename(video_input_path),
-                "detections": detected_labels,
-                "ipfs_hash": ipfs_hash,
-                "transaction_hash": tx_hash,
-                "ipfs_link": f"https://gateway.pinata.cloud/ipfs/{ipfs_hash}" if ipfs_hash else None
-            }
-            log_event_locally(LOCAL_LOG_FILE, event_data)
-
-            print("\n--- ✅ Permanent Evidence Record ---")
-            print(f"IPFS Link: {event_data['ipfs_link']}")
-            print(f"Proof of Record (Transaction Hash): {tx_hash}")
-            print(f"Ethereum Explorer Link: https://sepolia.etherscan.io/tx/0x{tx_hash}" if tx_hash else "N/A")
-
-        else: print("\n✅ No threats detected above the confidence threshold.")
-        print("\nPipeline finished successfully!")
-    else:
-        print("\n❌ Pipeline failed to produce an output.")
+# ==============================================================================
+# --- REMOVED __main__ BLOCK ---
+# This block is for direct script execution and contains secrets. It is unsafe for
+# a deployed application module. The main execution logic is now correctly
+# handled by your backend/app.py script.
+# ==============================================================================
