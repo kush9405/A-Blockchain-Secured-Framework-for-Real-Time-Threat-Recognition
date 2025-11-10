@@ -42,21 +42,42 @@ yamnet_model = None
 x3d_model = None
 feature_extractor_device = None
 
+# In Pipeline.py
+
 def _load_feature_extractors():
-    """Loads the YAMNet and X3D models into memory once."""
+    """
+    Loads the YAMNet and X3D models from a local cache created during the build step.
+    """
     global yamnet_model, x3d_model, feature_extractor_device
-    if yamnet_model and x3d_model: return
-    print("Loading feature extraction models (YAMNet, X3D)...")
+    
+    if yamnet_model is not None and x3d_model is not None:
+        return
+
+    print("--- Loading models from local build cache ---")
+    
+    # Define the SAME local cache path used in download_models.py
+    CACHE_DIR = os.path.join(os.getcwd(), 'model_cache')
+    
+    # Set environment variables BEFORE importing the hub libraries
+    os.environ['TFHUB_CACHE_DIR'] = os.path.join(CACHE_DIR, 'tf_hub')
+    torch.hub.set_dir(os.path.join(CACHE_DIR, 'torch_hub'))
+    
     import tensorflow as tf
     import tensorflow_hub as hub
     from pytorchvideo.models.hub import x3d_s
-    feature_extractor_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Render free tier is CPU-only, so we force CPU
+    feature_extractor_device = torch.device("cpu")
     print(f"Using device for feature extraction: {feature_extractor_device}")
+
+    # Load the models FROM THE CACHE. The libraries will find them automatically.
     with tf.device('/CPU:0'):
         yamnet_model = hub.load('https://tfhub.dev/google/yamnet/1')
-    x3d_model = x3d_s(pretrained=True).eval().to(feature_extractor_device)
-    print("✅ Feature extraction models loaded.")
 
+    x3d_model = x3d_s(pretrained=True).eval().to(feature_extractor_device)
+    
+    print("--- ✅ Models loaded successfully from cache ---")
+    
 def extract_audio_features(audio_path):
     """Extracts audio features using the YAMNet model."""
     try:
